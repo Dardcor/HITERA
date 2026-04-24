@@ -1,26 +1,75 @@
 import Link from 'next/link';
-import { ArrowRight, Lock, Mail, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Lock, Mail, ArrowLeft, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
+    const router = useRouter();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setErrorMsg('');
+
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
+
+            if (error) throw error;
+
+            router.push('/dashboard');
+        } catch (error: any) {
+            setErrorMsg(error.message || 'Gagal masuk. Cek kembali email & sandi Anda.');
+        } finally {
+            setLoading(false);
+        }
+    };
     return (
         <div className="auth-wrapper animate-fade-in">
             <div className="glass-panel auth-container">
                 <h1 className="page-title" style={{ fontSize: '36px', textAlign: 'center', marginBottom: '8px', background: 'none', WebkitTextFillColor: 'initial', color: '#5b21b6' }}>HITERA</h1>
                 <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '48px' }}>Masuk dengan kredensial aman di Vault Anda</p>
 
-                <form style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+                {errorMsg && (
+                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '12px', borderRadius: '12px', marginBottom: '24px', fontSize: '14px', textAlign: 'center' }}>
+                        {errorMsg}
+                    </div>
+                )}
+
+                <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
                     <div>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>
                             <Mail size={16} /> Alamat Email Vault
                         </label>
-                        <input type="email" placeholder="nama@email.com" className="styled-input" required />
+                        <input
+                            type="email"
+                            placeholder="nama@email.com"
+                            className="styled-input"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
                     </div>
 
                     <div>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>
                             <Lock size={16} /> Kata Sandi Enkripsi
                         </label>
-                        <input type="password" placeholder="••••••••" className="styled-input" required />
+                        <input
+                            type="password"
+                            placeholder="••••••••"
+                            className="styled-input"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '-8px' }}>
@@ -31,9 +80,9 @@ export default function LoginPage() {
                         <Link href="/forgot-password" style={{ fontSize: '14px', color: 'var(--accent-hover)', textDecoration: 'none', fontWeight: '500' }}>Lupa Sandi?</Link>
                     </div>
 
-                    <Link href="/dashboard" className="styled-button" style={{ marginTop: '12px' }}>
-                        Masuk <ArrowRight size={20} />
-                    </Link>
+                    <button type="submit" disabled={loading} className="styled-button" style={{ marginTop: '12px', opacity: loading ? 0.7 : 1 }}>
+                        {loading ? <Loader2 size={20} className="animate-spin" /> : <>Masuk <ArrowRight size={20} /></>}
+                    </button>
                 </form>
 
                 <p style={{ textAlign: 'center', marginTop: '40px', fontSize: '15px' }}>
