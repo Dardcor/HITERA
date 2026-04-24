@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { HeartPulse, Droplet, Moon, Scale, Plus, Minus, Loader2, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -11,16 +11,12 @@ export default function KesehatanView() {
 
     const today = new Date().toISOString().split('T')[0];
 
-    useEffect(() => {
-        fetchHealthData();
-    }, []);
-
-    const fetchHealthData = async () => {
+    const fetchHealthData = useCallback(async () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('kesehatan')
             .select('*')
             .eq('user_id', user.id)
@@ -33,7 +29,11 @@ export default function KesehatanView() {
             setWeight(data.weight_kg?.toString() || '');
         }
         setLoading(false);
-    };
+    }, [today]);
+
+    useEffect(() => {
+        fetchHealthData();
+    }, [fetchHealthData]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -105,9 +105,13 @@ export default function KesehatanView() {
                     </div>
 
                     {/* Progress bar */}
-                    <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}>
-                        <div style={{ height: '100%', width: `${Math.min(100, (water / 8) * 100)}%`, background: 'var(--info)', transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)', borderRadius: '10px' }}></div>
-                    </div>
+                    {loading ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px' }}><Loader2 size={20} className="animate-spin" /></div>
+                    ) : (
+                        <div style={{ width: '100%', height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}>
+                            <div style={{ height: '100%', width: `${Math.min(100, (water / 8) * 100)}%`, background: 'var(--info)', transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)', borderRadius: '10px' }}></div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Sleep Tracker */}

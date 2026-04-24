@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, TrendingDown, Trash2, PiggyBank, PlusCircle, Activity, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Wallet, TrendingUp, TrendingDown, Trash2, PiggyBank, PlusCircle, Activity } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type Transaction = {
@@ -16,18 +16,12 @@ export default function KeuanganView() {
     const [category, setCategory] = useState('');
     const [type, setType] = useState<'pemasukan' | 'pengeluaran'>('pengeluaran');
     const [loading, setLoading] = useState(true);
-
-    // Load from Supabase Real Data
-    useEffect(() => {
-        fetchTransactions();
-    }, []);
-
-    const fetchTransactions = async () => {
+    const fetchTransactions = useCallback(async () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('keuangan')
             .select('*')
             .eq('user_id', user.id)
@@ -35,7 +29,11 @@ export default function KeuanganView() {
 
         if (data) setTransactions(data);
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchTransactions();
+    }, [fetchTransactions]);
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -179,7 +177,9 @@ export default function KeuanganView() {
                     <h2 style={{ fontSize: '22px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <Activity size={24} color="var(--accent-hover)" /> Riwayat Transaksi
                     </h2>
-                    {transactions.length === 0 ? (
+                    {loading ? (
+                        <div style={{ textAlign: 'center', padding: '60px' }}>Loading transaki...</div>
+                    ) : transactions.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--text-secondary)' }}>
                             <Wallet size={48} style={{ opacity: 0.2, margin: '0 auto 16px' }} />
                             <p>Belum ada aktivitas transaksi. Jaga finansial Anda!</p>

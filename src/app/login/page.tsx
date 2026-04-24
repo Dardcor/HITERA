@@ -28,8 +28,9 @@ export default function LoginPage() {
             if (error) throw error;
 
             router.push('/dashboard');
-        } catch (error: any) {
-            setErrorMsg(error.message || 'Gagal masuk. Cek kembali email & sandi Anda.');
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Gagal masuk. Cek kembali email & sandi Anda.';
+            setErrorMsg(message);
         } finally {
             setLoading(false);
         }

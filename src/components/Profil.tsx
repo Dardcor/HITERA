@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User, Lock, Save, Loader2, ShieldCheck, UserCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -13,16 +13,12 @@ export default function ProfilView() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
 
-    useEffect(() => {
-        fetchProfile();
-    }, []);
-
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('profiles')
             .select('username, full_name')
             .eq('id', user.id)
@@ -33,7 +29,11 @@ export default function ProfilView() {
             setFullName(data.full_name || '');
         }
         setLoading(false);
-    };
+    }, []);
+
+    useEffect(() => {
+        fetchProfile();
+    }, [fetchProfile]);
 
     const handleUpdateProfile = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { BookOpen, ListTodo, NotebookPen, Check, X, Plus, Loader2, Save } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { BookOpen, ListTodo, NotebookPen, Check, X, Plus, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type Todo = {
@@ -17,11 +17,7 @@ export default function KeseharianView() {
 
     const today = new Date().toISOString().split('T')[0];
 
-    useEffect(() => {
-        fetchAllData();
-    }, []);
-
-    const fetchAllData = async () => {
+    const fetchAllData = useCallback(async () => {
         setLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -35,7 +31,7 @@ export default function KeseharianView() {
             .order('created_at', { ascending: false });
 
         if (todoData) {
-            setTodos(todoData.map((t: any) => ({
+            setTodos(todoData.map((t: { id: string; text: string; is_done: boolean }) => ({
                 id: t.id,
                 text: t.text,
                 done: t.is_done
@@ -52,7 +48,11 @@ export default function KeseharianView() {
 
         if (journalData) setNotes(journalData.content);
         setLoading(false);
-    };
+    }, [today]);
+
+    useEffect(() => {
+        fetchAllData();
+    }, [fetchAllData]);
 
     const handleAddTodo = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -94,7 +94,7 @@ export default function KeseharianView() {
         else fetchAllData();
     };
 
-    const saveJournal = async () => {
+    const saveJournal = async (content: string) => {
         setSavingNotes(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -104,7 +104,7 @@ export default function KeseharianView() {
             .upsert({
                 user_id: user.id,
                 date: today,
-                content: notes
+                content: content
             }, { onConflict: 'user_id, date' });
 
         if (error) console.error('Gagal simpan jurnal:', error.message);
@@ -115,10 +115,10 @@ export default function KeseharianView() {
     useEffect(() => {
         if (loading) return;
         const timer = setTimeout(() => {
-            saveJournal();
+            saveJournal(notes);
         }, 2000);
         return () => clearTimeout(timer);
-    }, [notes]);
+    }, [notes, loading, today]);
 
 
 

@@ -36,8 +36,9 @@ export default function RegisterPage() {
 
             setSuccess(true);
             setTimeout(() => router.push('/login'), 3000);
-        } catch (error: any) {
-            setErrorMsg(error.message || 'Gagal mendaftar. Periksa koneksi atau data Anda.');
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Gagal mendaftar. Periksa koneksi atau data Anda.';
+            setErrorMsg(message);
         } finally {
             setLoading(false);
         }

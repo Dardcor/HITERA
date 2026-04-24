@@ -5,10 +5,10 @@ import KeuanganView from '../../components/Keuangan';
 import KesehatanView from '../../components/Kesehatan';
 import KeseharianView from '../../components/Keseharian';
 import ProfilView from '../../components/Profil';
-import { HeartPulse, BookOpen, Wallet, LogOut, LayoutDashboard, Menu, X, UserCircle, ChevronRight, ChevronLeft, Home, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { HeartPulse, BookOpen, Wallet, LogOut, LayoutDashboard, UserCircle, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function Dashboard() {
     const router = useRouter();
@@ -28,7 +28,7 @@ export default function Dashboard() {
 
         checkUser();
 
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
             if (event === 'SIGNED_OUT') {
                 router.push('/login');
             }
@@ -106,12 +106,12 @@ export default function Dashboard() {
                     justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
                     gap: '16px'
                 }}>
-                    <img
+                    <Image
                         src="/hitera.png"
                         alt="Logo"
+                        width={42}
+                        height={42}
                         style={{
-                            width: '42px',
-                            height: '42px',
                             borderRadius: '12px',
                             boxShadow: '0 0 15px rgba(139, 92, 246, 0.4)'
                         }}
