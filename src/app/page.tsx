@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowRight, Activity, Wallet, BookOpen, Rocket, ShieldCheck, Zap, Sparkles, PieChart, Moon, CheckCircle } from 'lucide-react';
+import { ArrowRight, Activity, BookOpen, Rocket, ShieldCheck, Sparkles, PieChart, CheckCircle } from 'lucide-react';
 
 export default function LandingPage() {
   return (

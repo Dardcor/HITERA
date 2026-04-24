@@ -4,7 +4,7 @@ import { useState } from 'react';
 import KeuanganView from '../../components/Keuangan';
 import KesehatanView from '../../components/Kesehatan';
 import KeseharianView from '../../components/Keseharian';
-import { LayoutDashboard, HeartPulse, BookOpen, Wallet, LogOut } from 'lucide-react';
+import { HeartPulse, BookOpen, Wallet, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Dashboard() {
