@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, TrendingDown, Trash2, PiggyBank, PlusCircle, Activity } from 'lucide-react';
+import { Wallet, TrendingUp, TrendingDown, Trash2, PiggyBank, PlusCircle, Activity, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 type Transaction = {
     id: string;
@@ -14,34 +15,60 @@ export default function KeuanganView() {
     const [amount, setAmount] = useState('');
     const [category, setCategory] = useState('');
     const [type, setType] = useState<'pemasukan' | 'pengeluaran'>('pengeluaran');
+    const [loading, setLoading] = useState(true);
 
-    // Load from LocalStorage
+    // Load from Supabase Real Data
     useEffect(() => {
-        const saved = localStorage.getItem('hitera_keuangan');
-        if (saved) setTransactions(JSON.parse(saved));
+        fetchTransactions();
     }, []);
 
-    useEffect(() => {
-        localStorage.setItem('hitera_keuangan', JSON.stringify(transactions));
-    }, [transactions]);
+    const fetchTransactions = async () => {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-    const handleAdd = (e: React.FormEvent) => {
+        const { data, error } = await supabase
+            .from('keuangan')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (data) setTransactions(data);
+        setLoading(false);
+    };
+
+    const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!amount || !category) return;
-        const newTx: Transaction = {
-            id: Date.now().toString(),
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return alert('Sesi berakhir, silakan login ulang.');
+
+        const { error } = await supabase.from('keuangan').insert({
+            user_id: user.id,
             type,
             amount: parseFloat(amount),
             category,
-            date: new Date().toLocaleDateString('id-ID', { month: 'short', day: 'numeric', year: 'numeric' }),
-        };
-        setTransactions([newTx, ...transactions]);
-        setAmount('');
-        setCategory('');
+            date: new Date().toISOString().split('T')[0]
+        });
+
+        if (error) {
+            alert('Gagal menyimpan: ' + error.message);
+        } else {
+            setAmount('');
+            setCategory('');
+            fetchTransactions();
+        }
     };
 
-    const handleDelete = (id: string) => {
-        setTransactions(transactions.filter(t => t.id !== id));
+    const handleDelete = async (id: string) => {
+        const { error } = await supabase
+            .from('keuangan')
+            .delete()
+            .eq('id', id);
+
+        if (error) alert('Gagal menghapus: ' + error.message);
+        else fetchTransactions();
     };
 
     const totalPemasukan = transactions.filter(t => t.type === 'pemasukan').reduce((acc, t) => acc + t.amount, 0);

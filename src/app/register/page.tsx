@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowRight, Lock, Mail, User, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowRight, Lock, Mail, User, ArrowLeft, Loader2, CheckCircle, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
@@ -10,6 +10,7 @@ export default function RegisterPage() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [fullName, setFullName] = useState('');
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
@@ -95,19 +96,46 @@ export default function RegisterPage() {
                                 />
                             </div>
 
-                            <div>
+                            <div style={{ position: 'relative' }}>
                                 <label style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: '14px', color: 'var(--text-secondary)', fontWeight: '500' }}>
                                     <Lock size={16} /> Kata Sandi Akses
                                 </label>
-                                <input
-                                    type="password"
-                                    placeholder="Minimal keamanan 8 Karakter"
-                                    className="styled-input"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    minLength={8}
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Minimal keamanan 8 Karakter"
+                                        className="styled-input"
+                                        style={{ paddingRight: '50px' }}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        required
+                                        minLength={8}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        style={{
+                                            position: 'absolute',
+                                            right: '16px',
+                                            top: '50%',
+                                            transform: 'translateY(-50%)',
+                                            background: 'none',
+                                            border: 'none',
+                                            color: 'var(--text-secondary)',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            padding: '4px',
+                                            transition: 'color 0.2s',
+                                            outline: 'none'
+                                        }}
+                                        onMouseOver={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                                        onMouseOut={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+                                    >
+                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                    </button>
+                                </div>
                             </div>
 
                             <button type="submit" disabled={loading} className="styled-button" style={{ marginTop: '12px', opacity: loading ? 0.7 : 1 }}>

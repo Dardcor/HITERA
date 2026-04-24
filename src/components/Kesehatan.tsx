@@ -1,26 +1,58 @@
 import { useState, useEffect } from 'react';
-import { HeartPulse, Droplet, Moon, Scale, Plus, Minus } from 'lucide-react';
+import { HeartPulse, Droplet, Moon, Scale, Plus, Minus, Loader2, Save } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 export default function KesehatanView() {
     const [water, setWater] = useState(0);
     const [sleep, setSleep] = useState('');
     const [weight, setWeight] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
-    // Load
+    const today = new Date().toISOString().split('T')[0];
+
     useEffect(() => {
-        const saved = localStorage.getItem('hitera_kesehatan');
-        if (saved) {
-            const data = JSON.parse(saved);
-            setWater(data.water || 0);
-            setSleep(data.sleep || '');
-            setWeight(data.weight || '');
-        }
+        fetchHealthData();
     }, []);
 
-    // Save
-    useEffect(() => {
-        localStorage.setItem('hitera_kesehatan', JSON.stringify({ water, sleep, weight }));
-    }, [water, sleep, weight]);
+    const fetchHealthData = async () => {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+            .from('kesehatan')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('date', today)
+            .single();
+
+        if (data) {
+            setWater(data.water_glasses || 0);
+            setSleep(data.sleep_hours?.toString() || '');
+            setWeight(data.weight_kg?.toString() || '');
+        }
+        setLoading(false);
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return alert('Silakan login ulang.');
+
+        const { error } = await supabase
+            .from('kesehatan')
+            .upsert({
+                user_id: user.id,
+                date: today,
+                water_glasses: water,
+                sleep_hours: parseFloat(sleep) || 0,
+                weight_kg: parseFloat(weight) || 0
+            }, { onConflict: 'user_id, date' });
+
+        if (error) alert('Gagal sinkronisasi: ' + error.message);
+        setSaving(false);
+    };
 
     return (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
@@ -33,6 +65,15 @@ export default function KesehatanView() {
                     <h1 className="page-title">Manajemen Kesehatan</h1>
                     <p className="page-subtitle">Pencatatan metrik kesehatan harian dan progres kebugaran tubuh Anda.</p>
                 </div>
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="styled-button"
+                    style={{ width: 'auto', padding: '12px 24px', display: 'flex', gap: '10px', marginLeft: 'auto' }}
+                >
+                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                    {saving ? 'Sinkronisasi...' : 'Simpan Progres'}
+                </button>
             </header>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '32px' }}>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, ListTodo, NotebookPen, Check, X, Plus } from 'lucide-react';
+import { BookOpen, ListTodo, NotebookPen, Check, X, Plus, Loader2, Save } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 type Todo = {
     id: string;
@@ -11,38 +12,115 @@ export default function KeseharianView() {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [newTodo, setNewTodo] = useState('');
     const [notes, setNotes] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [savingNotes, setSavingNotes] = useState(false);
 
-    // Load initial data
+    const today = new Date().toISOString().split('T')[0];
+
     useEffect(() => {
-        const savedTodos = localStorage.getItem('hitera_todos');
-        const savedNotes = localStorage.getItem('hitera_notes');
-        if (savedTodos) setTodos(JSON.parse(savedTodos));
-        if (savedNotes) setNotes(savedNotes);
+        fetchAllData();
     }, []);
 
-    // Save changes
-    useEffect(() => {
-        localStorage.setItem('hitera_todos', JSON.stringify(todos));
-    }, [todos]);
+    const fetchAllData = async () => {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
 
-    useEffect(() => {
-        localStorage.setItem('hitera_notes', notes);
-    }, [notes]);
+        // Fetch Todo
+        const { data: todoData } = await supabase
+            .from('keseharian_todos')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('date', today)
+            .order('created_at', { ascending: false });
 
-    const handleAddTodo = (e: React.FormEvent) => {
+        if (todoData) {
+            setTodos(todoData.map((t: any) => ({
+                id: t.id,
+                text: t.text,
+                done: t.is_done
+            })));
+        }
+
+        // Fetch Journal
+        const { data: journalData } = await supabase
+            .from('keseharian_jurnal')
+            .select('content')
+            .eq('user_id', user.id)
+            .eq('date', today)
+            .single();
+
+        if (journalData) setNotes(journalData.content);
+        setLoading(false);
+    };
+
+    const handleAddTodo = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTodo.trim()) return;
-        setTodos([{ id: Date.now().toString(), text: newTodo, done: false }, ...todos]);
-        setNewTodo('');
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase.from('keseharian_todos').insert({
+            user_id: user.id,
+            text: newTodo,
+            date: today
+        });
+
+        if (error) alert('Gagal tambah tugas: ' + error.message);
+        else {
+            setNewTodo('');
+            fetchAllData();
+        }
     };
 
-    const toggleTodo = (id: string) => {
-        setTodos(todos.map(t => t.id === id ? { ...t, done: !t.done } : t));
+    const toggleTodo = async (id: string, currentStatus: boolean) => {
+        const { error } = await supabase
+            .from('keseharian_todos')
+            .update({ is_done: !currentStatus })
+            .eq('id', id);
+
+        if (error) alert('Gagal update: ' + error.message);
+        else fetchAllData();
     };
 
-    const deleteTodo = (id: string) => {
-        setTodos(todos.filter(t => t.id !== id));
+    const deleteTodo = async (id: string) => {
+        const { error } = await supabase
+            .from('keseharian_todos')
+            .delete()
+            .eq('id', id);
+
+        if (error) alert('Gagal hapus: ' + error.message);
+        else fetchAllData();
     };
+
+    const saveJournal = async () => {
+        setSavingNotes(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { error } = await supabase
+            .from('keseharian_jurnal')
+            .upsert({
+                user_id: user.id,
+                date: today,
+                content: notes
+            }, { onConflict: 'user_id, date' });
+
+        if (error) console.error('Gagal simpan jurnal:', error.message);
+        setSavingNotes(false);
+    };
+
+    // Auto-save debounced for notes
+    useEffect(() => {
+        if (loading) return;
+        const timer = setTimeout(() => {
+            saveJournal();
+        }, 2000);
+        return () => clearTimeout(timer);
+    }, [notes]);
+
+
 
     return (
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '40px', height: '100%' }}>
@@ -91,7 +169,7 @@ export default function KeseharianView() {
                                     padding: '20px', background: 'rgba(0,0,0,0.3)', borderRadius: '16px',
                                     opacity: todo.done ? 0.5 : 1, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', flex: 1 }} onClick={() => toggleTodo(todo.id)}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer', flex: 1 }} onClick={() => toggleTodo(todo.id, todo.done)}>
                                         <div style={{
                                             width: '28px', height: '28px', borderRadius: '8px',
                                             border: `2px solid ${todo.done ? 'var(--success)' : 'var(--accent-hover)'}`,
@@ -137,9 +215,16 @@ export default function KeseharianView() {
                             flex: 1, minHeight: '400px', resize: 'none',
                             fontFamily: 'Outfit, inherit', fontSize: '16px', lineHeight: '1.8',
                             padding: '24px', background: 'rgba(0,0,0,0.2)',
-                            border: 'none', borderRadius: '16px', boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.3)'
+                            border: savingNotes ? '1px solid var(--accent-hover)' : '1px solid transparent',
+                            borderRadius: '16px', boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.3)',
+                            transition: 'border 0.3s'
                         }}
                     />
+                    {savingNotes && (
+                        <div style={{ position: 'absolute', bottom: '20px', right: '20px', color: 'var(--accent-hover)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                            <Loader2 size={14} className="animate-spin" /> Auto-saving...
+                        </div>
+                    )}
                 </div>
 
             </div>
