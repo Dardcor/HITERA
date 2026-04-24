@@ -331,6 +331,47 @@ h6 {
     animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+@keyframes splashFadeOut {
+    to {
+        opacity: 0;
+        visibility: hidden;
+    }
+}
+
+@keyframes pulseGlow {
+    0% {
+        filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.2));
+    }
+
+    100% {
+        filter: drop-shadow(0 0 40px rgba(139, 92, 246, 0.9));
+    }
+}
+
+@keyframes trackingIn {
+    0% {
+        letter-spacing: 40px;
+        opacity: 0;
+        filter: blur(10px);
+    }
+
+    100% {
+        letter-spacing: 8px;
+        opacity: 1;
+        filter: blur(0px);
+    }
+}
+
+@keyframes slideRight {
+    0% {
+        transform: translateX(-150%);
+    }
+
+    100% {
+        transform: translateX(250%);
+    }
+}
+
 /* ========================================================
    RESPONSIVE OVERRIDES TO ADAPT ALL INLINE GRIDS AND STYLES
    ======================================================== */
@@ -435,14 +476,32 @@ h6 {
     }
 
     /* Landing Page overrides */
-    nav.landing-nav,
     body>div>nav {
-        padding: 16px 20px !important;
+        padding: 16px 12px !important;
     }
 
-    nav .text-transparent,
     nav div:first-child {
+        gap: 8px !important;
+    }
+
+    nav div:first-child img {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    nav div:first-child div {
         font-size: 20px !important;
+        letter-spacing: 1px !important;
+    }
+
+    nav div:last-child {
+        gap: 8px !important;
+    }
+
+    nav div:last-child a {
+        font-size: 13px !important;
+        padding: 8px 12px !important;
+        white-space: nowrap !important;
     }
 
     section {

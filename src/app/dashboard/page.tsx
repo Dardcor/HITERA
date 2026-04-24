@@ -14,8 +14,9 @@ export default function Dashboard() {
         <div className="app-container">
             {/* Sidebar Navigation */}
             <aside className="sidebar">
-                <div className="sidebar-logo">
-                    HITERA.
+                <div className="sidebar-logo" style={{ background: 'none', WebkitTextFillColor: 'initial', color: '#5b21b6', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+                    <img src="/hitera.png" alt="Hitera Logo" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)' }} />
+                    HITERA
                 </div>
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div
@@ -46,10 +47,6 @@ export default function Dashboard() {
                         <LogOut size={20} />
                         Keluar Aplikasi
                     </Link>
-                    <div style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>
-                        <p>Hitera Productivity Suite</p>
-                        <p style={{ marginTop: '8px', opacity: 0.5, letterSpacing: '0.5px' }}>SUPABASE READY.</p>
-                    </div>
                 </div>
             </aside>
 

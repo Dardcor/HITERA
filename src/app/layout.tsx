@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "../css/globals.css";
+import SplashScreen from "../components/SplashScreen";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -14,7 +15,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Hitera - Supercharge Your Life",
+  title: "HITERA - Hidup Teratur",
   description: "Platform produktivitas lengkap untuk pelacakan keuangan, kesehatan, dan keseharian harian",
   manifest: "/manifest.json"
 };
@@ -36,6 +37,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <SplashScreen />
         {children}
       </body>
     </html>

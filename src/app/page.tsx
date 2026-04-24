@@ -5,7 +5,7 @@ import { ArrowRight, Activity, Wallet, BookOpen, Rocket, ShieldCheck, Zap, Spark
 
 export default function LandingPage() {
   return (
-    <div className="animate-fade-in" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Navigation Bar */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0,
@@ -14,8 +14,11 @@ export default function LandingPage() {
         background: 'rgba(10, 10, 15, 0.7)', backdropFilter: 'blur(16px)',
         borderBottom: '1px solid var(--glass-border)'
       }}>
-        <div style={{ fontSize: '28px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '2px', background: 'linear-gradient(135deg, #fff, var(--accent-hover))', WebkitBackgroundClip: 'text', color: 'transparent' }}>
-          HITERA.
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <img src="/hitera.png" alt="Hitera Logo" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', boxShadow: '0 0 10px rgba(139, 92, 246, 0.5)' }} />
+          <div style={{ fontSize: '28px', fontWeight: '800', fontFamily: 'Outfit', letterSpacing: '2px', color: '#5b21b6' }}>
+            HITERA
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
           <Link href="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: '600', padding: '10px 20px', transition: 'color 0.2s', fontSize: '15px' }} onMouseOver={e => e.currentTarget.style.color = 'white'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
@@ -28,7 +31,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section style={{
+      <section className="animate-fade-in" style={{
         minHeight: '100vh',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         padding: '160px 20px 60px', position: 'relative', overflow: 'hidden'
@@ -44,7 +47,7 @@ export default function LandingPage() {
 
           <h1 style={{ fontSize: '72px', fontWeight: '800', lineHeight: '1.1', marginBottom: '32px', letterSpacing: '-2px' }}>
             <span className="gradient-text">Welcome to </span>
-            <span className="accent-gradient-text">HITERA.</span>
+            <span style={{ color: '#5b21b6' }}>HITERA</span>
           </h1>
 
           <p style={{ color: 'var(--text-secondary)', fontSize: '20px', lineHeight: '1.6', maxWidth: '700px', margin: '0 auto 56px' }}>
