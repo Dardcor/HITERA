@@ -1,3 +1,5 @@
+"use client";
+
 import Link from 'next/link';
 import { ArrowRight, Lock, Mail, ArrowLeft, Loader2 } from 'lucide-react';
 import { useState } from 'react';
@@ -54,6 +56,7 @@ export default function LoginPage() {
                             className="styled-input"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
+                            autoCapitalize="none"
                             required
                         />
                     </div>

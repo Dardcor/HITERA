@@ -1,3 +1,5 @@
+"use client";
+
 import Link from 'next/link';
 import { ArrowRight, Lock, Mail, User, ArrowLeft, Loader2, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
@@ -88,6 +90,7 @@ export default function RegisterPage() {
                                     className="styled-input"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
+                                    autoCapitalize="none"
                                     required
                                 />
                             </div>
