@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Lock, Mail, ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -11,8 +11,25 @@ export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Start with loading for session check
     const [errorMsg, setErrorMsg] = useState('');
+
+    useEffect(() => {
+        const checkActiveSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                router.push('/dashboard');
+            } else {
+                setLoading(false);
+                // Retrieve remembered email
+                const savedEmail = localStorage.getItem('hitera-remembered-email');
+                if (savedEmail) {
+                    setEmail(savedEmail);
+                }
+            }
+        };
+        checkActiveSession();
+    }, [router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -26,6 +43,19 @@ export default function LoginPage() {
             });
 
             if (error) throw error;
+
+            // Record persistent session in database (wajib permanen)
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                await supabase.from('user_persistent_sessions').insert({
+                    user_id: session.user.id,
+                    session_token: session.access_token,
+                    user_agent: typeof window !== 'undefined' ? window.navigator.userAgent : 'Unknown'
+                });
+            }
+
+            // Remember email for easier login next time
+            localStorage.setItem('hitera-remembered-email', email);
 
             router.push('/dashboard');
         } catch (error: unknown) {
@@ -105,9 +135,14 @@ export default function LoginPage() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '-8px' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: 'var(--text-secondary)', userSelect: 'none' }}>
-                            <input type="checkbox" style={{ accentColor: 'var(--accent-hover)', width: '16px', height: '16px', cursor: 'pointer' }} />
-                            Ingat Kredensial Saya
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: 'var(--accent-hover)', userSelect: 'none' }}>
+                            <input
+                                type="checkbox"
+                                checked={true}
+                                readOnly
+                                style={{ accentColor: 'var(--accent-hover)', width: '16px', height: '16px', cursor: 'default' }}
+                            />
+                            Vault Persistence Aktif (Wajib)
                         </label>
                         <Link href="/forgot-password" style={{ fontSize: '14px', color: 'var(--accent-hover)', textDecoration: 'none', fontWeight: '500' }}>Lupa Sandi?</Link>
                     </div>

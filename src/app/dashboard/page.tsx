@@ -23,6 +23,12 @@ export default function Dashboard() {
                 router.push('/login');
             } else {
                 setLoading(false);
+                // Update last active in database (wajib permanen tracking)
+                await supabase
+                    .from('user_persistent_sessions')
+                    .update({ last_active: new Date().toISOString() })
+                    .eq('user_id', session.user.id)
+                    .eq('session_token', session.access_token);
             }
         };
 

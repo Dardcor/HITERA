@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowRight, Lock, Mail, User, ArrowLeft, Loader2, CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 
@@ -12,9 +12,21 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [fullName, setFullName] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true); // Start with loading for session check
     const [errorMsg, setErrorMsg] = useState('');
     const [success, setSuccess] = useState(false);
+
+    useEffect(() => {
+        const checkActiveSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                router.push('/dashboard');
+            } else {
+                setLoading(false);
+            }
+        };
+        checkActiveSession();
+    }, [router]);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();

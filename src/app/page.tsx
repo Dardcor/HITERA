@@ -1,9 +1,20 @@
 "use client";
 
 import Link from 'next/link';
-import { ArrowRight, Activity, BookOpen, Rocket, ShieldCheck, Sparkles, PieChart, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { ArrowRight, Activity, BookOpen, Rocket, ShieldCheck, Sparkles, PieChart, CheckCircle, LayoutDashboard } from 'lucide-react';
 
 export default function LandingPage() {
+  const [hasSession, setHasSession] = useState(false);
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setHasSession(!!session);
+    };
+    checkSession();
+  }, []);
   return (
     <div style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Navigation Bar */}
@@ -21,12 +32,20 @@ export default function LandingPage() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Link href="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: '600', padding: '10px 20px', transition: 'color 0.2s', fontSize: '15px' }} onMouseOver={e => e.currentTarget.style.color = 'white'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
-            Masuk
-          </Link>
-          <Link href="/register" style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '12px 28px', borderRadius: '30px', textDecoration: 'none', fontWeight: '600', transition: 'transform 0.2s', fontSize: '15px' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
-            Daftar Gratis
-          </Link>
+          {hasSession ? (
+            <Link href="/dashboard" style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '12px 28px', borderRadius: '30px', textDecoration: 'none', fontWeight: '600', transition: 'transform 0.2s', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
+              <LayoutDashboard size={18} /> Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link href="/login" style={{ color: 'var(--text-secondary)', textDecoration: 'none', fontWeight: '600', padding: '10px 20px', transition: 'color 0.2s', fontSize: '15px' }} onMouseOver={e => e.currentTarget.style.color = 'white'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
+                Masuk
+              </Link>
+              <Link href="/register" style={{ background: 'var(--text-primary)', color: 'var(--bg-primary)', padding: '12px 28px', borderRadius: '30px', textDecoration: 'none', fontWeight: '600', transition: 'transform 0.2s', fontSize: '15px' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}>
+                Daftar Gratis
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -55,12 +74,20 @@ export default function LandingPage() {
           </p>
 
           <div style={{ display: 'flex', gap: '24px', justifyContent: 'center' }}>
-            <Link href="/register" className="styled-button" style={{ maxWidth: '240px', padding: '18px', textDecoration: 'none' }}>
-              Mulai Sekarang <ArrowRight size={20} />
-            </Link>
-            <Link href="/login" className="styled-button styled-button-outline" style={{ maxWidth: '240px', padding: '18px', textDecoration: 'none' }}>
-              Masuk ke Vault
-            </Link>
+            {hasSession ? (
+              <Link href="/dashboard" className="styled-button" style={{ maxWidth: '320px', padding: '18px', textDecoration: 'none' }}>
+                Kembali ke Vault <ArrowRight size={20} />
+              </Link>
+            ) : (
+              <>
+                <Link href="/register" className="styled-button" style={{ maxWidth: '240px', padding: '18px', textDecoration: 'none' }}>
+                  Mulai Sekarang <ArrowRight size={20} />
+                </Link>
+                <Link href="/login" className="styled-button styled-button-outline" style={{ maxWidth: '240px', padding: '18px', textDecoration: 'none' }}>
+                  Masuk ke Vault
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </section>

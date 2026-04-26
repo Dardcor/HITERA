@@ -11,6 +11,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: true,
+        storageKey: 'hitera-vault-session',
+        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     }
 });
