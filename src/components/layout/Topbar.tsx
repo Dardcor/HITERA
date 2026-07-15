@@ -5,48 +5,26 @@ import { Bell } from 'lucide-react';
 import { useTranslation } from '@/contexts/LanguageContext';
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
-import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 
 export default function Topbar() {
     const pathname = usePathname();
     const { t } = useTranslation();
     const { user } = useAuth();
-    const supabase = createClient();
     const [hasUnread, setHasUnread] = useState(false);
 
     useEffect(() => {
         if (!user) return;
         
-        const checkUnread = async () => {
-            const { data, error } = await supabase
-                .from('notifikasi_history')
-                .select('id', { count: 'exact', head: true })
-                .eq('user_id', user.id)
-                .eq('is_read', false);
-            
-            if (!error && data !== null && data.length > 0 || (error == null && (data as any) === null)) {
-                // Supabase head request returns null data but non-null count if count > 0 in some versions, 
-                // but let's just do a normal select with limit 1 to be safe
-            }
-        };
-
-        const fetchUnread = async () => {
-            const { data } = await supabase
-                .from('notifikasi_history')
-                .select('id')
-                .eq('user_id', user.id)
-                .eq('is_read', false)
-                .limit(1);
-            
-            if (data && data.length > 0) {
-                setHasUnread(true);
-            } else {
-                setHasUnread(false);
-            }
-        };
-
-        fetchUnread();
+        // Cek unread notifikasi dari localStorage atau biarkan false
+        const historyStr = localStorage.getItem('hitera_notifikasi_history');
+        if (historyStr) {
+            try {
+                const history = JSON.parse(historyStr);
+                const hasAny = history.some((n: any) => !n.is_read);
+                setHasUnread(hasAny);
+            } catch(e){}
+        }
     }, [user, pathname]);
 
     const getPageTitle = () => {

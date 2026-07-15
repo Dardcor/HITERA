@@ -3,18 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Mail, ArrowLeft } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import Image from 'next/image';
 import { useToast } from '@/components/ui/Toast';
+import { sendDiscordWebhook } from '@/lib/discord';
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isSent, setIsSent] = useState(false);
-    const supabase = createClient();
     const { success, error: toastError } = useToast();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -23,10 +22,16 @@ export default function ForgotPasswordPage() {
 
         setIsLoading(true);
         try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/login`,
-            });
-            if (error) throw error;
+            const webhookUrl = process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_USER;
+            if (webhookUrl) {
+                await sendDiscordWebhook(webhookUrl, {
+                    content: `🔐 **[FORGOT PASSWORD]** \`${email}\` meminta reset password.`
+                });
+            }
+
+            // Simulate network delay
+            await new Promise(resolve => setTimeout(resolve, 800));
+
             success('Link reset password telah dikirim ke email Anda.');
             setIsSent(true);
         } catch (err: unknown) {

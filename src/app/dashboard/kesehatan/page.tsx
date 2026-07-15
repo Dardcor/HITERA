@@ -10,7 +10,6 @@ import { useTranslation } from '@/contexts/LanguageContext';
 import { ChevronLeft, ChevronRight, Edit3, HeartPulse, Droplet, Moon, Clipboard, Dumbbell } from 'lucide-react';
 import KesehatanForm from '@/components/kesehatan/KesehatanForm';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { format } from 'date-fns';
 
 export default function KesehatanPage() {
@@ -20,27 +19,22 @@ export default function KesehatanPage() {
     const [historyLoading, setHistoryLoading] = useState(true);
 
     const { t, dateFnsLocale } = useTranslation();
-    const supabase = createClient();
 
     const { data, loading } = useKesehatan(tanggal);
 
     const prevDay = () => setTanggal(tambahHari(tanggal, -1));
     const nextDay = () => setTanggal(tambahHari(tanggal, 1));
 
-    const fetchRecentHistory = async () => {
+    const fetchRecentHistory = () => {
         setHistoryLoading(true);
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data: resData, error } = await supabase
-                .from('kesehatan')
-                .select('*')
-                .eq('user_id', user.id)
-                .gte('tanggal', '2020-01-01')
-                .lte('tanggal', hariIni())
-                .order('tanggal', { ascending: false });
-            if (error) throw error;
-            setHistory(resData || []);
+            const dataStr = localStorage.getItem('hitera_kesehatan');
+            let allData: any[] = dataStr ? JSON.parse(dataStr) : [];
+            allData = allData.filter(d => d.tanggal >= '2020-01-01' && d.tanggal <= hariIni());
+            allData.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
+            
+            // Limit to recent ones, maybe 7
+            setHistory(allData.slice(0, 7));
         } catch (err) {
             console.error(err);
         } finally {

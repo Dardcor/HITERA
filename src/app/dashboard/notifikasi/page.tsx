@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { createClient } from '@/lib/supabase/client';
 import { Card } from '@/components/ui/Card';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { Wallet, HeartPulse, CheckSquare, Bell, Clock, CheckCircle2 } from 'lucide-react';
@@ -19,7 +18,6 @@ interface NotificationHistory {
 
 export default function RiwayatNotifikasiPage() {
     const { user } = useAuth();
-    const supabase = createClient();
     const { t } = useTranslation();
     const [notifications, setNotifications] = useState<NotificationHistory[]>([]);
     const [loading, setLoading] = useState(true);
@@ -28,23 +26,25 @@ export default function RiwayatNotifikasiPage() {
         const fetchNotifications = async () => {
             if (!user) return;
             try {
-                const { data, error } = await supabase
-                    .from('notifikasi_history')
-                    .select('*')
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false });
+                const dataStr = localStorage.getItem('hitera_notifikasi_history');
+                let data: NotificationHistory[] = dataStr ? JSON.parse(dataStr) : [];
+                
+                // Sort by created_at desc
+                data.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-                if (!error && data) {
-                    setNotifications(data);
-                    
-                    
-                    const unreadIds = data.filter(n => !n.is_read).map(n => n.id);
-                    if (unreadIds.length > 0) {
-                        await supabase
-                            .from('notifikasi_history')
-                            .update({ is_read: true })
-                            .in('id', unreadIds);
+                setNotifications(data);
+                
+                let updated = false;
+                data = data.map(n => {
+                    if (!n.is_read) {
+                        updated = true;
+                        return { ...n, is_read: true };
                     }
+                    return n;
+                });
+                
+                if (updated) {
+                    localStorage.setItem('hitera_notifikasi_history', JSON.stringify(data));
                 }
             } catch (err) {
                 console.error(err);
@@ -54,7 +54,7 @@ export default function RiwayatNotifikasiPage() {
         };
 
         fetchNotifications();
-    }, [user, supabase]);
+    }, [user]);
 
     const getIcon = (tipe: string, isRead: boolean) => {
         const colorClass = isRead ? 'text-[var(--text-muted)]' : 'text-[var(--accent-blue)]';

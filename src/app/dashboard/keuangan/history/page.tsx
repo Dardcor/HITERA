@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { formatRupiah, formatTanggalID, hariIni, nowWIB, cn, formatTanggalSingkat } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
@@ -20,7 +19,6 @@ export default function KeuanganHistoryPage() {
     const [filterJenis, setFilterJenis] = useState('Semua');
     const [preset, setPreset] = useState('Minggu');
     const { user } = useAuth();
-    const supabase = createClient();
     const { t, dateFnsLocale } = useTranslation();
 
     const presetMap: Record<string, string> = {
@@ -64,26 +62,28 @@ export default function KeuanganHistoryPage() {
         applyPreset('Minggu');
     }, [applyPreset]);
 
-    const fetchHistory = async () => {
+    const fetchHistory = () => {
         if (!user || !fromDate) return;
         setLoading(true);
         try {
-            let query = supabase
-                .from('transaksi')
-                .select('*')
-                .eq('user_id', user.id)
-                .gte('tanggal', fromDate)
-                .lte('tanggal', toDate)
-                .order('tanggal', { ascending: false })
-                .order('created_at', { ascending: false });
-
+            const dataStr = localStorage.getItem('hitera_keuangan_transaksi');
+            let allData: Transaksi[] = dataStr ? JSON.parse(dataStr) : [];
+            
+            // Filter by date range
+            allData = allData.filter(t => t.tanggal >= fromDate && t.tanggal <= toDate);
+            
+            // Filter by status
             if (filterJenis !== 'Semua') {
-                query = query.eq('jenis', filterJenis.toLowerCase());
+                allData = allData.filter(t => t.jenis === filterJenis.toLowerCase());
             }
 
-            const { data, error } = await query;
-            if (error) throw error;
-            setTransaksi(data || []);
+            // Sort by tanggal desc, created_at desc
+            allData.sort((a, b) => {
+                if (a.tanggal !== b.tanggal) return b.tanggal.localeCompare(a.tanggal);
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+            });
+            
+            setTransaksi(allData);
         } catch (err) {
             console.error(err);
         } finally {

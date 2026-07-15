@@ -1,22 +1,14 @@
+// Force recompile to clear Next.js cache
 import { LanguageProvider } from '@/contexts/LanguageContext';
-import { createServerClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
 import Sidebar from '@/components/layout/Sidebar';
 import Topbar from '@/components/layout/Topbar';
 import MobileNav from '@/components/layout/MobileNav';
 
-export default async function DashboardLayout({
+export default function DashboardLayout({
     children,
 }: {
     children: React.ReactNode;
 }) {
-    const supabase = createServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) {
-        redirect('/login');
-    }
-
     return (
         <LanguageProvider>
             <div className="flex h-screen bg-[var(--bg-primary)] overflow-hidden">

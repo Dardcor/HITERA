@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { formatTanggalID, hariIni, nowWIB, cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
@@ -20,7 +19,6 @@ export default function KesehatanHistoryPage() {
     const [toDate, setToDate] = useState(hariIni());
     const [preset, setPreset] = useState('Minggu');
     const { user } = useAuth();
-    const supabase = createClient();
     const { t, dateFnsLocale } = useTranslation();
 
     const formatWaktu = (created_at: string) => {
@@ -72,20 +70,17 @@ export default function KesehatanHistoryPage() {
         applyPreset('Minggu');
     }, [applyPreset]);
 
-    const fetchHistory = async () => {
+    const fetchHistory = () => {
         if (!user || !fromDate) return;
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('kesehatan')
-                .select('*')
-                .eq('user_id', user.id)
-                .gte('tanggal', fromDate)
-                .lte('tanggal', toDate)
-                .order('tanggal', { ascending: false });
+            const dataStr = localStorage.getItem('hitera_kesehatan');
+            let allData: DataKesehatan[] = dataStr ? JSON.parse(dataStr) : [];
+            
+            allData = allData.filter(d => d.tanggal >= fromDate && d.tanggal <= toDate);
+            allData.sort((a, b) => b.tanggal.localeCompare(a.tanggal));
 
-            if (error) throw error;
-            setHistory(data || []);
+            setHistory(allData);
         } catch (err) {
             console.error(err);
         } finally {

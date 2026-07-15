@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/lib/supabase';
 import { MapPin, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -20,15 +19,11 @@ export default function LokasiPage() {
 
     const loadSettings = async () => {
         try {
-            const { data } = await supabase
-                .from('user_settings')
-                .select('lokasi_enabled')
-                .eq('user_id', user?.id)
-                .single();
-
-            if (data) {
-                setLokasiEnabled(data.lokasi_enabled || false);
-                if (data.lokasi_enabled) {
+            const dataStr = localStorage.getItem('hitera_lokasi_enabled');
+            if (dataStr) {
+                const isEnabled = JSON.parse(dataStr);
+                setLokasiEnabled(isEnabled);
+                if (isEnabled) {
                     checkLocation();
                 }
             }
@@ -58,11 +53,7 @@ export default function LokasiPage() {
         setLokasiEnabled(val);
 
         try {
-            await supabase
-                .from('user_settings')
-                .update({ lokasi_enabled: val })
-                .eq('user_id', user.id);
-            
+            localStorage.setItem('hitera_lokasi_enabled', JSON.stringify(val));
             if (val) {
                 checkLocation();
             } else {

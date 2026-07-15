@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { createClient } from '@/lib/supabase/client';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -15,7 +14,6 @@ export default function ProfilPage() {
     const { user } = useAuth();
     const { success, error: toastError } = useToast();
     const { t } = useTranslation();
-    const supabase = createClient();
 
     const [username, setUsername] = useState('');
     const [fullName, setFullName] = useState('');
@@ -25,23 +23,19 @@ export default function ProfilPage() {
     const [savingProfile, setSavingProfile] = useState(false);
     const [savingPassword, setSavingPassword] = useState(false);
 
-    const fetchProfile = useCallback(async () => {
+    const fetchProfile = useCallback(() => {
         if (!user) return;
         setLoadingProfile(true);
         try {
-            const { data } = await supabase
-                .from('profiles')
-                .select('username, full_name')
-                .eq('id', user.id)
-                .single();
-
-            if (data) {
+            const dataStr = localStorage.getItem('hitera_profile');
+            if (dataStr) {
+                const data = JSON.parse(dataStr);
                 setUsername(data.username || '');
                 setFullName(data.full_name || '');
             }
         } catch (_) { }
         setLoadingProfile(false);
-    }, [user, supabase]);
+    }, [user]);
 
     useEffect(() => {
         fetchProfile();
@@ -52,16 +46,11 @@ export default function ProfilPage() {
         if (!user) return;
         setSavingProfile(true);
         try {
-            const { error } = await supabase
-                .from('profiles')
-                .upsert({
-                    id: user.id,
-                    username,
-                    full_name: fullName,
-                    updated_at: new Date().toISOString(),
-                });
-
-            if (error) throw error;
+            localStorage.setItem('hitera_profile', JSON.stringify({
+                username,
+                full_name: fullName,
+                updated_at: new Date().toISOString(),
+            }));
             success(t('profile_synced'));
         } catch (err: any) {
             toastError(t('profile_sync_failed'));
@@ -79,8 +68,8 @@ export default function ProfilPage() {
         }
         setSavingPassword(true);
         try {
-            const { error } = await supabase.auth.updateUser({ password: newPassword });
-            if (error) throw error;
+            // Dummy password change
+            await new Promise(r => setTimeout(r, 500));
             success(t('password_applied'));
             setNewPassword('');
             setConfirmPassword('');

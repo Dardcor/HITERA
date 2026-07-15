@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
-import { createClient } from '@/lib/supabase/client';
+import { sendDiscordWebhook } from '@/lib/discord';
+
+const WEBHOOK_URL = process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_SETTINGS;
 
 export interface UserSettings {
   notifikasi_enabled: boolean;
@@ -15,7 +17,6 @@ export interface UserSettings {
 
 export function useSettings() {
   const { user } = useAuth();
-  const supabase = createClient();
   
   const [settings, setSettings] = useState<UserSettings>({
     notifikasi_enabled: false,
@@ -26,17 +27,13 @@ export function useSettings() {
   });
   const [loading, setLoading] = useState(true);
 
-  const loadSettings = useCallback(async () => {
+  const loadSettings = useCallback(() => {
     if (!user) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('user_settings')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (data) {
+      const dataStr = localStorage.getItem('hitera_settings');
+      if (dataStr) {
+        const data = JSON.parse(dataStr);
         setSettings({
           notifikasi_enabled: data.notifikasi_enabled ?? false,
           bahasa: data.bahasa ?? 'id',
@@ -48,21 +45,21 @@ export function useSettings() {
           tugas_notif_time: data.tugas_notif_time,
         });
       } else {
-        
-        await supabase.from('user_settings').upsert({
-          user_id: user.id,
+        const defaultSettings = {
           notifikasi_enabled: false,
           bahasa: 'id',
           keuangan_notif_enabled: false,
           kesehatan_notif_enabled: false,
           tugas_notif_enabled: false,
-        });
+        };
+        localStorage.setItem('hitera_settings', JSON.stringify(defaultSettings));
+        setSettings(defaultSettings);
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
     }
     setLoading(false);
-  }, [user, supabase]);
+  }, [user]);
 
   useEffect(() => {
     loadSettings();
@@ -73,20 +70,19 @@ export function useSettings() {
     const oldSettings = { ...settings };
     const newSettings = { ...settings, ...updates };
     
-    
+    // Optimistic update
     setSettings(newSettings);
     
     try {
-      const { error } = await supabase.from('user_settings').upsert({
-        user_id: user.id,
-        ...newSettings,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id' });
+      localStorage.setItem('hitera_settings', JSON.stringify(newSettings));
       
-      if (error) throw error;
+      // Send to Discord
+      sendDiscordWebhook(WEBHOOK_URL, {
+          content: `⚙️ **Pengaturan Diperbarui**\n**Notifikasi Utama:** ${newSettings.notifikasi_enabled ? 'Aktif' : 'Mati'}\n**Bahasa:** ${newSettings.bahasa}`
+      });
     } catch (err) {
       console.error('Failed to update settings:', err);
-      
+      // Revert on error
       setSettings(oldSettings);
       throw err;
     }
@@ -96,13 +92,19 @@ export function useSettings() {
     if (!user) return;
     
     try {
+      localStorage.removeItem('hitera_transaksi');
+      localStorage.removeItem('hitera_kesehatan');
+      localStorage.removeItem('hitera_tugas');
+      localStorage.removeItem('hitera_keseharian_todos');
+      localStorage.removeItem('hitera_settings');
       
-      await Promise.all([
-        supabase.from('transaksi').delete().eq('user_id', user.id),
-        supabase.from('kesehatan').delete().eq('user_id', user.id),
-        supabase.from('tugas').delete().eq('user_id', user.id),
-        supabase.from('keseharian_todos').delete().eq('user_id', user.id),
-      ]);
+      // Reset settings state
+      loadSettings();
+      
+      // Send to Discord
+      sendDiscordWebhook(WEBHOOK_URL, {
+          content: `🚨 **PERINGATAN: Semua Data Pengguna Telah Dihapus**`
+      });
     } catch (err) {
       console.error('Failed to delete user data:', err);
       throw err;

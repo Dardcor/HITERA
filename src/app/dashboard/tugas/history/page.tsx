@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { formatTanggalID, hariIni, nowWIB, cn } from '@/lib/utils';
 import { Card } from '@/components/ui/Card';
@@ -21,7 +20,6 @@ export default function TugasHistoryPage() {
     const [filterStatus, setFilterStatus] = useState('Semua');
     const [preset, setPreset] = useState('Minggu');
     const { user } = useAuth();
-    const supabase = createClient();
     const { t, dateFnsLocale } = useTranslation();
 
     const formatWaktu = (created_at: string) => {
@@ -73,25 +71,25 @@ export default function TugasHistoryPage() {
         applyPreset('Minggu');
     }, [applyPreset]);
 
-    const fetchHistory = async () => {
+    const fetchHistory = () => {
         if (!user || !fromDate) return;
         setLoading(true);
         try {
-            let query = supabase
-                .from('tugas')
-                .select('*')
-                .eq('user_id', user.id)
-                .gte('tanggal_target', fromDate)
-                .lte('tanggal_target', toDate)
-                .order('tanggal_target', { ascending: false });
-
+            const dataStr = localStorage.getItem('hitera_tugas');
+            let allTasks: Tugas[] = dataStr ? JSON.parse(dataStr) : [];
+            
+            // Filter by date range
+            allTasks = allTasks.filter(t => t.tanggal_target >= fromDate && t.tanggal_target <= toDate);
+            
+            // Filter by status
             if (filterStatus !== 'Semua') {
-                query = query.eq('status', filterStatus.toLowerCase());
+                allTasks = allTasks.filter(t => t.status === filterStatus.toLowerCase());
             }
 
-            const { data, error } = await query;
-            if (error) throw error;
-            setHistory(data || []);
+            // Sort by tanggal_target desc
+            allTasks.sort((a, b) => b.tanggal_target.localeCompare(a.tanggal_target));
+            
+            setHistory(allTasks);
         } catch (err) {
             console.error(err);
         } finally {

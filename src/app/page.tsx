@@ -82,7 +82,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center text-center">
             <Shield className="text-[var(--accent-blue)] mb-4" size={32} />
             <h4 className="font-bold mb-2">Privasi Terjamin</h4>
-            <p className="text-sm text-[var(--text-muted)]">Data Anda tersimpan aman dengan enkripsi tingkat lanjut di Supabase.</p>
+            <p className="text-sm text-[var(--text-muted)]">Data Anda tersimpan aman secara lokal di perangkat Anda via localStorage.</p>
           </div>
           <div className="flex flex-col items-center text-center">
             <Zap className="text-[var(--accent-blue)] mb-4" size={32} />
