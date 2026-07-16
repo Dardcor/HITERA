@@ -50,9 +50,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             const isAuthPage = pathname === '/login' || pathname === '/register';
             
             if (isDashboard && !user) {
-                router.replace('/login');
+                const searchParams = new URLSearchParams(window.location.search);
+                const from = searchParams.get('from');
+                if (from === '/register') {
+                    router.replace('/register');
+                } else {
+                    router.replace('/login');
+                }
             } else if (isAuthPage && user) {
                 router.replace('/dashboard');
+            } else if (isDashboard && user) {
+                const searchParams = new URLSearchParams(window.location.search);
+                if (searchParams.has('from')) {
+                    router.replace('/dashboard');
+                }
             }
         }
     }, [user, loading, pathname, router]);

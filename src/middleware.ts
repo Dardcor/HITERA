@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
     }
 
     if (isAuthPage && session) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+        return NextResponse.redirect(new URL(`/dashboard?from=${pathname}`, request.url));
     }
 
     return NextResponse.next();
