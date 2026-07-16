@@ -37,6 +37,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             } catch (e) {
                 console.error(e);
             }
+        } else {
+            // Clear orphaned cookie if user data is missing
+            document.cookie = 'hitera_session=; path=/; max-age=0';
         }
         setLoading(false);
     }, []);
@@ -56,6 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const signOut = async () => {
         localStorage.removeItem('hitera_user');
+        document.cookie = 'hitera_session=; path=/; max-age=0';
         setUser(null);
         router.replace('/');
     };

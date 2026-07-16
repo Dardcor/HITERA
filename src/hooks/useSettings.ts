@@ -31,7 +31,7 @@ export function useSettings() {
     if (!user) return;
     setLoading(true);
     try {
-      const dataStr = localStorage.getItem('hitera_settings');
+      const dataStr = localStorage.getItem('hitera_settings_' + user.id);
       if (dataStr) {
         const data = JSON.parse(dataStr);
         setSettings({
@@ -52,7 +52,7 @@ export function useSettings() {
           kesehatan_notif_enabled: false,
           tugas_notif_enabled: false,
         };
-        localStorage.setItem('hitera_settings', JSON.stringify(defaultSettings));
+        localStorage.setItem('hitera_settings_' + user.id, JSON.stringify(defaultSettings));
         setSettings(defaultSettings);
       }
     } catch (err) {
@@ -74,7 +74,7 @@ export function useSettings() {
     setSettings(newSettings);
     
     try {
-      localStorage.setItem('hitera_settings', JSON.stringify(newSettings));
+      localStorage.setItem('hitera_settings_' + user.id, JSON.stringify(newSettings));
       
       // Send to Discord
       sendDiscordWebhook(WEBHOOK_URL, {
@@ -92,11 +92,17 @@ export function useSettings() {
     if (!user) return;
     
     try {
-      localStorage.removeItem('hitera_transaksi');
-      localStorage.removeItem('hitera_kesehatan');
-      localStorage.removeItem('hitera_tugas');
-      localStorage.removeItem('hitera_keseharian_todos');
-      localStorage.removeItem('hitera_settings');
+      ['hitera_transaksi', 'hitera_kesehatan', 'hitera_tugas', 'hitera_keseharian_todos'].forEach(key => {
+        const dataStr = localStorage.getItem(key);
+        if (dataStr) {
+            const allData = JSON.parse(dataStr);
+            if (Array.isArray(allData)) {
+                const filteredData = allData.filter((item: any) => item.user_id !== user.id);
+                localStorage.setItem(key, JSON.stringify(filteredData));
+            }
+        }
+      });
+      localStorage.removeItem('hitera_settings_' + user.id);
       
       // Reset settings state
       loadSettings();

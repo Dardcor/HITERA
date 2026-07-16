@@ -19,7 +19,8 @@ export function useTugas() {
         setLoading(true);
         try {
             const dataStr = localStorage.getItem('hitera_tugas');
-            const data = dataStr ? JSON.parse(dataStr) : [];
+            let data = dataStr ? JSON.parse(dataStr) : [];
+            data = data.filter((t: Tugas) => t.user_id === user.id);
             // Sort by created_at descending
             data.sort((a: Tugas, b: Tugas) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
             setTugas(data);
